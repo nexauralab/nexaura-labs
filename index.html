@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexaura Labs</title>
+  <style>
+    /* ---------- General Reset ---------- */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root{
+      /* darker purple → black palette */
+      --bg-1: #04000c;   /* very dark purple */
+      --bg-2: #170021;   /* deep purple */
+      --bg-3: #000000;   /* black */
+      --bg-4: #070010;   /* near-black purple */
+      --accent: rgba(155,93,229,0.06);
+    }
+    body { font-family: Arial, sans-serif; color: white; overflow-x: hidden; min-height:100vh; position:relative; }
+    /* ensure background canvas doesn't take document flow space (prevents blank gap above header) */
+    #bg-stars {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -4;              
+      pointer-events: none;
+      display: block;
+    }
+    /* layered animated gradient moved behind canvas */
+    body::before{
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -5;              /* behind canvas */
+      background: linear-gradient(120deg, var(--bg-1), var(--bg-2), var(--bg-3), var(--bg-4));
+      background-size: 400% 400%;
+      filter: saturate(1.05) contrast(1.02);
+      animation: gradientPulse 22s ease infinite;
+    }
+    /* soft colored blobs for depth (toned darker to match new palette) */
+    #bg-blobs{
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      background:
+        radial-gradient(550px 420px at 10% 20%, rgba(155,93,229,0.06), transparent 14%),
+        radial-gradient(420px 360px at 85% 80%, rgba(123,44,191,0.05), transparent 11%),
+        radial-gradient(380px 300px at 60% 30%, rgba(255,255,255,0.02), transparent 8%);
+      filter: blur(40px) saturate(1.1);
+      animation: blobsFloat 18s ease-in-out infinite;
+    }
+    @keyframes blobsFloat {
+      0%{ transform: translateY(0) scale(1); opacity:1 }
+      50%{ transform: translateY(-20px) scale(1.02); opacity:0.95 }
+      100%{ transform: translateY(0) scale(1); opacity:1 }
+    }
+    /* subtle film grain / noise overlay to unify tones */
+    #bg-noise{
+      position: fixed;
+      inset: 0;
+      z-index: -2; /* placed behind floating icons */
+      pointer-events: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' stitchTiles='stitch' /><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.03' fill='black'/></svg>");
+      mix-blend-mode: overlay;
+      opacity: 0.9;
+      backdrop-filter: none;
+      animation: noiseShift 12s linear infinite;
+    }
+    @keyframes noiseShift { from { transform:translate(0,0) } to { transform:translate(60px,40px) } }
+    /* make sure site content sits above these background layers */
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+
+    /* ---------- Gradient Animation ---------- */
+    @keyframes gradientPulse {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    body { animation: gradientPulse 15s ease infinite; }
+
+    /* ---------- Header ---------- */
+    header { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1.25rem; backdrop-filter: blur(8px); background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.06); }
+    header h1 { font-size: 1rem; font-weight: 600; letter-spacing: 0.2px; }
+    nav a { margin-left: 1.25rem; font-size: 0.98rem; transition: color 0.22s; }
+    nav a:hover { color: #9b5de5; }
+
+    /* ---------- Hero (particles + animations) ---------- */
+    .hero { position: relative; text-align: center; padding: 6.5rem 2rem; overflow: hidden; }
+    /* Layered animated SVG lines behind hero content */
+    .hero-lines { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: block; }
+    .hero-lines svg { width: 100%; height: 100%; overflow: visible; }
+    /* base line style — now includes a gentle glow/tone animation so lines brighten when the background is dark */
+    .hero-lines .line {
+      stroke: rgba(255,255,255,0.10);
+      stroke-width: 1.6;
+      fill: none;
+      stroke-linecap: round;
+      stroke-dasharray: 300;
+      stroke-dashoffset: 300;
+      mix-blend-mode: screen;
+      filter: drop-shadow(0 8px 16px rgba(255,255,255,0.02));
+      /* tone animation runs alongside the draw/float animations */
+      animation: lineTone 12s ease-in-out infinite;
+      transition: stroke 300ms linear, stroke-width 300ms linear, filter 300ms linear;
+    }
+ 
+    .hero-lines .layer-1 { opacity: 0.95; transform-origin: center; animation: lineDraw 5.5s cubic-bezier(.2,.8,.2,1) infinite; }
+    .hero-lines .layer-2 { opacity: 0.75; transform-origin: center; animation: lineDraw 7s ease-in-out 0.25s infinite; transform: translateY(10px) scale(1.02); }
+    .hero-lines .layer-3 { opacity: 0.55; transform-origin: center; animation: lineDraw 9s ease-in-out 0.55s infinite; transform: translateY(-8px) scale(0.98); }
+ 
+     @keyframes lineDraw {
+       0%   { stroke-dashoffset: 300; transform: translateX(-12%); opacity: 0; }
+       18%  { opacity: 0.7; }
+       50%  { stroke-dashoffset: -60; transform: translateX(0%); opacity: 1; }
+       82%  { opacity: 0.7; }
+       100% { stroke-dashoffset: -420; transform: translateX(12%); opacity: 0; }
+     }
+ 
+    /* subtle tone/brightness animation so lines become more visible against darker sections of the gradient */
+    @keyframes lineTone {
+      0%   { stroke: rgba(255,255,255,0.06); stroke-width: 1.2; filter: drop-shadow(0 6px 12px rgba(255,255,255,0.02)); }
+      25%  { stroke: rgba(255,255,255,0.12); stroke-width: 1.6; }
+      50%  { stroke: rgba(255,255,255,0.22); stroke-width: 2.2; filter: drop-shadow(0 12px 28px rgba(255,255,255,0.06)); }
+      75%  { stroke: rgba(255,255,255,0.12); stroke-width: 1.6; }
+      100% { stroke: rgba(255,255,255,0.06); stroke-width: 1.2; }
+    }
+ 
+     /* gentle vertical float to add depth */
+     @keyframes subtleFloat {
+       0%   { transform: translateY(0); }
+       50%  { transform: translateY(-6px); }
+       100% { transform: translateY(0); }
+     }
+     .hero-lines .layer-1 { animation-name: lineDraw, subtleFloat; animation-duration: 5.5s, 10s; animation-iteration-count: infinite, infinite; animation-timing-function: cubic-bezier(.2,.8,.2,1), ease-in-out; }
+     .hero-lines .layer-2 { animation-name: lineDraw, subtleFloat; animation-duration: 7s, 12s; animation-iteration-count: infinite, infinite; animation-timing-function: ease-in-out, ease-in-out; animation-delay: .25s, 0s; }
+     .hero-lines .layer-3 { animation-name: lineDraw, subtleFloat; animation-duration: 9s, 14s; animation-iteration-count: infinite, infinite; animation-timing-function: ease-in-out, ease-in-out; animation-delay: .55s, 0s; }
+
+    .hero .hero-content { position: relative; z-index: 3; display: inline-block; padding: 1rem 0; }
+    #hero-particles { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 0; transition: opacity 700ms ease; }
+    #hero-particles.active { opacity: 1; }
+
+    /* entrance for hero content */
+    @keyframes heroEnter {
+      0% { opacity: 0; transform: translateY(14px) scale(0.995); filter: blur(2px); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    .hero .hero-content { animation: heroEnter 800ms cubic-bezier(.2,.9,.2,1) both; }
+
+    /* subtle floating for headings + bigger text */
+    .hero h2 { animation: floatY 6s ease-in-out infinite, fadeIn 1s forwards; font-size: 4rem; line-height: 1.02; letter-spacing: 0.6px; position: relative; display:inline-block; padding:0 0.5rem; }
+    .hero p { animation: floatY 6s ease-in-out 0.5s infinite alternate, fadeIn 1s 0.4s forwards; opacity: 0; font-size: 1.25rem; color: #e6e6ff; margin-top: 0.8rem; }
+
+    /* slight text shimmer + micro-scale pop on hover */
+    .hero h2::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 100%;
+      pointer-events: none;
+      background: linear-gradient(120deg, rgba(255,255,255,0.06), rgba(255,255,255,0.0) 60%);
+      mix-blend-mode: overlay;
+      animation: shimmer 6s linear infinite;
+      z-index: 4;
+    }
+    .hero h2:hover { transform: translateY(-2px) scale(1.01); transition: transform 220ms ease; }
+
+    @keyframes floatY {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+    @keyframes shimmer { 0% { transform: translateX(-120%) } 100% { transform: translateX(120%) } }
+
+    /* ensure hero text sits above canvas */
+    .hero .fade-in { position: relative; z-index: 3; }
+
+    /* ---------- Sections ---------- */
+    section { padding: 6rem 2rem; }
+    .section-bg { background: rgba(0,0,0,0.3); backdrop-filter: blur(10px); border-radius: 1rem; margin-bottom: 2rem; padding: 2rem; border: 1px solid rgba(255,255,255,0.1); }
+
+    /* ---------- Our Expertise (bigger + new font for bullets) ---------- */
+    #services { padding: 8rem 2rem; } 
+    h3 { font-size: 3rem; text-align: center; margin-bottom: 3.25rem; }
+    #services .card {
+  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.05);
+}
+    #services .card:hover { background: rgba(255,255,255,0.08); }
+    /* center and constrain the grid so cards feel larger */
+    .grid { display: grid; gap: 1.5rem; max-width: 1200px; margin-left: auto; margin-right: auto; }
+    @media (min-width: 768px) { .grid-3 { grid-template-columns: repeat(3,1fr); } .grid-2 { grid-template-columns: repeat(2,1fr); } }
+    /* Enhanced card visuals */
+    .card {
+      padding: 1.5rem;
+      border-radius: 1rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+      transition: transform 300ms ease, background 300ms ease, box-shadow 300ms ease;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 8px 26px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .card:hover { transform: translateY(-8px); box-shadow: 0 18px 40px rgba(0,0,0,0.7); background: rgba(255,255,255,0.04); }
+    .card .card-head { display:flex; align-items:center; gap:0.75rem; }
+    .card .icon {
+      width:44px; height:44px; border-radius:10px;
+      display:inline-grid; place-items:center; font-size:20px;
+      background: linear-gradient(135deg, rgba(155,93,229,0.16), rgba(123,44,191,0.12));
+      color: #fff;
+      flex-shrink:0;
+      box-shadow: 0 6px 18px rgba(123,44,191,0.08);
+    }
+    .card h4 { font-size: 1.25rem; margin:0; color: #e9dfff; }
+    .card .muted { color: #bfb9d5; font-size:0.95rem; }
+    /* change bullet description font to a more modern UI font and slightly larger for readability */
+    .card p, .card li { color: #d9d9e6; font-size: 1rem; font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; }
+    .card ul { margin-top:0.6rem; padding-left:1.15rem; }
+    .card ul li { margin-bottom:0.45rem; position:relative; padding-left:0.6rem; }
+    .card ul li::before { content: "•"; position:absolute; left:0; top:0; color:#9b5de5; font-weight:700; font-size:1.1rem; line-height:1; }
+
+    /* Portfolio grid */
+    .portfolio-grid {
+      display: grid;
+      gap: 1.25rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+
+    /* Brand showreel: fixed 16:9, responsive, centered */
+.showreel-card { 
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: 960px;     /* allow larger screens but keep a sensible max */
+  margin: 0 auto;
+  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.05);
+
+}
+.showreel-card .video-wrapper { 
+  position: relative;
+  width: 100%;
+  padding-bottom: 39.06%; 
+  height: 0;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: #000;
+}
+.showreel-card .video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+
+    /* Reels: short-form portrait cards placed side-by-side (3 columns on wide screens) */
+    .reels-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+      grid-column: 1 / -1;
+      align-items: start;
+    }
+
+    .portrait-card { display:flex; flex-direction:column; gap:0.6rem; }
+    /* Make portrait video containers maintain 9:16 (short-form) ratio */
+    .portrait-card .video-wrapper { padding-top: 177.78%; /* 16/9 -> height = width * 16/9 */ min-height: 560px; max-height: 85vh; position: relative; overflow: hidden; border-radius: 0.75rem; }
+    .portrait-card .video-wrapper iframe { position: absolute; inset: 0; width: 100%; height: 100%; border:0; object-fit: cover; }
+
+    /* AI Automations card spans full width under reels */
+    /* AI Automations Gallery */
+.ai-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.ai-item {
+  text-align: center;
+  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.05);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.ai-item:hover {
+  transform: scale(1.03);
+  background: rgba(255,255,255,0.08);
+}
+
+.ai-item img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ai-item p {
+  font-size: 0.9rem;
+  color: #e0e0e0;
+  line-height: 1.3;
+}
+
+
+    /* Responsive: stack reels on smaller screens */
+    @media (max-width: 1000px) {
+      .reels-grid { grid-template-columns: 1fr; }
+      .portrait-card .video-wrapper { min-height: 520px; }
+    }
+
+    /* Ensure iframes are always responsive */
+    .video-wrapper { position: relative; width: 100%; overflow: hidden; border-radius: 0.75rem; }
+    .video-wrapper iframe { position: absolute; top:0; left:0; width:100%; height:100%; border:0; }
+
+    /* Ensure card hover/pop works even when reveal classes are present */
+    .card { transition: transform 300ms cubic-bezier(.2,.9,.2,1), box-shadow 300ms cubic-bezier(.2,.9,.2,1); }
+    .card:hover, .card:focus-within { transform: translateY(-10px) scale(1.006) !important; box-shadow: 0 20px 60px rgba(0,0,0,0.75) !important; }
+    /* higher-specificity rule for cards that also have reveal/visible classes */
+    .card.reveal.visible:hover { transform: translateY(-10px) scale(1.006) !important; }
+
+    /* ---------- FAQ ---------- */
+    .faq-item { cursor: pointer; padding: 1.5rem; border-radius: 1rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s; margin-bottom: 1rem; }
+    .faq-item:hover { border-color: #9b5de5; }
+    .faq-question { display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #9b5de5; }
+    .faq-answer {
+    margin-top: 10px;
+    color: #ddd;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+    .toggle-btn {
+    margin-left: 10px;
+    padding: 5px 10px;
+    background: transparent;
+    border: 1px solid #a855f7;
+    color: #a855f7;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .toggle-btn:hover {
+    background: #a855f7;
+    color: white;
+    }
+
+    /* ---------- Contact ---------- */
+    .contact-icons { display: flex; justify-content: center; gap: 1.5rem; font-size: 1.2rem; flex-wrap: wrap; }
+    .contact-icons a { transition: color 0.3s; }
+    .contact-icons a:hover { color: #9b5de5; }
+
+    /* ---------- Footer ---------- */
+    footer { text-align: center; padding: 1.5rem 0; border-top: 1px solid rgba(255,255,255,0.1); color: #aaa; }
+
+  /* --- Mouse Glow: simple, smooth, precise --- */
+#mouse-glow {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 120px;
+  height: 120px;
+  margin-left: -60px;
+  margin-top: -60px;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.12) 35%, transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transform: translate3d(-9999px,-9999px,0);
+  transition: opacity 0.15s linear;
+  z-index: 9999;
+}
+    /* subtle smaller glow on mobile */
+    @media (max-width:720px){
+      #mouse-glow{ width:140px;height:140px;margin-left:-70px;margin-top:-70px; }
+    }
+
+    /* hero-focused particle container (if we add an overlay) */
+    .hero-particle-wrap {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* reduce motion */
+    @media (prefers-reduced-motion: reduce) {
+      #mouse-glow { transition: none; opacity:0.9; }
+    }
+
+    /* ---------- Animations ---------- */
+    .fade-in { opacity: 0; transform: translateY(20px); animation: fadeIn 1s forwards; }
+    @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+
+    /* Scroll-triggered reveal helper (new) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px) scale(.995);
+      filter: blur(2px);
+      will-change: transform, opacity, filter;
+      transition:
+        opacity 520ms cubic-bezier(.22,.9,.25,1) var(--delay,0ms),
+        transform 520ms cubic-bezier(.22,.9,.25,1) var(--delay,0ms),
+        filter 520ms cubic-bezier(.22,.9,.25,1) var(--delay,0ms);
+      pointer-events: auto;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+
+    /* Prefer reveal-controlled animation instead of immediate .card animations */
+    .card { animation: none !important; }
+
+    /* Optional micro stagger for children inside containers (handled by JS via --delay) */
+    /* keep existing styles below... */
+
+    /* ---------- Floating background icons (video / marketing / growth) ---------- */
+    .floating-icons {
+      position: fixed;
+      inset: 0;
+      z-index: -1;              /* above noise (-2/-3) and below content (default stacking) */
+      pointer-events: none;
+      overflow: visible;
+      font-family: serif;
+    }
+    /* Use fixed-position container + absolute icons that are positioned and animated by JS.
+       Remove centering transform so left/top control exact viewport position. */
+    .floating-icon {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform: translate3d(0,0,0);
+      font-size: var(--size, 40px);
+      line-height: 1;
+      display: inline-block;
+      opacity: 0.95;
+      /* monochrome: force greyscale/saturation + contrast; mix-blend-mode to blend nicely with bg */
+      filter: grayscale(0) saturate(1) contrast(1.06);
+      mix-blend-mode: multiply;
+      will-change: transform, left, top, opacity;
+      transition: opacity 300ms linear;
+      user-select: none;
+      pointer-events: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+     .floating-icon.sm { --size: 24px; }
+     .floating-icon.md { --size: 36px; }
+     .floating-icon.lg { --size: 56px; }
+     
+    /* Respect reduced motion — disable movement but keep icons visible */
+    @media (prefers-reduced-motion: reduce) {
+      .floating-icon { transition: none !important; transform: none !important; opacity: 0.95; }
+    }
+
+    /* Responsive wrapper for Instagram embeds (keeps 9:16 short-form ratio) */
+    .instagram-embed { position: relative; width: 100%; padding-top: 177.78%; /* 9:16 */ overflow: hidden; border-radius: 0.75rem; }
+    .instagram-embed blockquote.instagram-media { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; margin: 0 !important; }
+    .instagram-embed iframe { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
+
+    /* Add/update these styles in your <style> */
+.video-placeholder { position:relative; cursor:pointer; width:100%; height:0; padding-top:39.0625%; overflow:hidden; border-radius:0.75rem; background:#000; }
+.video-placeholder .vp-thumb { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.video-placeholder .vp-play { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:3; background:rgba(0,0,0,0.55); color:#fff; border:0; padding:0.5rem 0.8rem; font-size:1.6rem; border-radius:6px; }
+.video-placeholder iframe { position:absolute; inset:0; width:100%; height:100%; border:0; display:block; }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+  <!-- Background layers (stars + blobs + noise) -->
+  <canvas id="bg-stars" aria-hidden="true"></canvas>
+  <div id="bg-blobs" aria-hidden="true"></div>
+  <div id="bg-noise" aria-hidden="true"></div>
+
+  <!-- Floating background icons (emoji) -->
+  <div id="floating-icons" class="floating-icons" aria-hidden="true">
+    <span class="floating-icon lg" data-emoji="🎬">🎬</span>
+    <span class="floating-icon md" data-emoji="🎥">🎥</span>
+    <span class="floating-icon md" data-emoji="📈">📈</span>
+    <span class="floating-icon sm" data-emoji="📣">📣</span>
+    <span class="floating-icon sm" data-emoji="✨">✨</span>
+    <span class="floating-icon md" data-emoji="🤖">🤖</span>
+    <span class="floating-icon md" data-emoji="📊">📊</span>
+    <span class="floating-icon sm" data-emoji="🎨">🎨</span>
+  </div>
+ 
+   <!-- Mouse Glow -->
+   <div id="mouse-glow"></div>
+ 
+   <!-- Header -->
+   <header>
+     <div style="display:flex;align-items:center;gap:0.75rem;">
+       <img src="logo.png" alt="Nexaura Labs Logo" style="height:3rem;filter:brightness(1.5);">
+       <h1>Nexaura Labs</h1>
+     </div>
+     <nav class="desktop-nav">
+       <a href="#services">Services</a>
+       <a href="#portfolio">Portfolio</a>
+       <a href="#testimonials">Testimonials</a>
+       <a href="#faq">FAQ</a>
+       <a href="#contact">Contact</a>
+     </nav>
+   </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <canvas id="hero-particles" aria-hidden="true"></canvas>
+   <!-- layered animated SVG lines (behind text, above particles) -->
+   <div class="hero-lines" aria-hidden="true">
+     <svg viewBox="0 0 1200 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+       <path class="line layer-1" d="M0,160 C200,100 400,220 600,160 C800,100 1000,220 1200,160" />
+       <path class="line layer-2" d="M0,120 C180,60 420,180 600,120 C780,60 1020,180 1200,120" />
+       <path class="line layer-3" d="M0,190 C240,150 360,230 600,190 C840,150 960,230 1200,190" />
+     </svg>
+   </div>
+
+    <div class="hero-content">
+      <img src="logo.png" alt="Nexaura Labs Logo" style="width:50px;margin-bottom:.5rem;">
+      <h1 style="font-size:2rem;margin-bottom:0.5rem;">Nexaura Labs</h1>
+      <h2 class="fade-in" style="animation-delay:0.2s;">Creativity . Innovation . Automation</h2>
+      <p class="fade-in" style="animation-delay:0.4s;">We engineer next-gen experiences — blending automation, design, and social presence.</p>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services">
+    <h3>Our Expertise</h3>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="card-head">
+          <div class="icon">🎬</div>
+          <div>
+            <h4>Social Media Marketing</h4>
+            <div class="muted">Video-first strategy & paid ads</div>
+          </div>
+        </div>
+        <ul>
+          <li>Video & Reel production</li>
+          <li>Branded post templates</li>
+          <li>Organic growth & optimization</li>
+          <li>Targeted ad campaigns</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="icon">🤖</div>
+          <div>
+            <h4>AI Automations</h4>
+            <div class="muted">Tailored automations & hosting</div>
+          </div>
+        </div>
+        <ul>
+          <li>Scenario-driven AI pipelines</li>
+          <li>Custom automations per workflow</li>
+          <li>24/7 hosting & monitoring</li>
+          <li>Continuous improvements & updates</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="icon">💻</div>
+          <div>
+            <h4>Website Development</h4>
+            <div class="muted">Fast, secure & SEO-friendly</div>
+          </div>
+        </div>
+        <ul>
+          <li>Modern UI & UX</li>
+          <li>Responsive, accessible layouts</li>
+          <li>PPC & performance optimizations</li>
+          <li>Security-first architecture</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Portfolio -->
+  <section id="portfolio" style="padding:2rem; max-width:1200px; margin:auto;">
+    <h3 style="color:#fff; text-align:center; margin-bottom:2rem;">Portfolio</h3>
+
+    <div class="portfolio-grid">
+      <div class="card landscape-card showreel-card">
+  <h4>Brand Showreel</h4>
+
+  <!-- Click-to-load placeholder to avoid embedding errors -->
+  <div class="video-wrapper">
+    <div class="video-placeholder" tabindex="0" role="button"
+         data-video-id="whiAZURUdds"
+         aria-label="Play Brand Showreel">
+      <img class="vp-thumb" src="https://img.youtube.com/vi/whiAZURUdds/maxresdefault.jpg" alt="Showreel thumbnail">
+      <button class="vp-play" aria-hidden="true">►</button>
+    </div>
+  </div>
+  <noscript>
+    <!-- If JS disabled, provide a direct link -->
+    <p style="margin-top:.5rem;"><a href="https://youtu.be/whiAZURUdds" target="_blank" rel="noopener">Open showreel on YouTube</a></p>
+  </noscript>
+</div>
+            <!-- 2) Reels — three portrait short-form cards side-by-side -->
+      <div class="reels-grid">
+        <!-- Reel 1 -->
+        <div class="card portrait-card">
+          <h4>Reel 1</h4>
+          <div class="instagram-embed">
+            <blockquote 
+              class="instagram-media" 
+              data-instgrm-permalink="https://www.instagram.com/reel/DO6Yw_Vjfoj/"
+              data-instgrm-version="14">
+            </blockquote>
+          </div>
+        </div>
+
+        <!-- Reel 2 -->
+        <div class="card portrait-card">
+          <h4>Reel 2</h4>
+          <div class="instagram-embed">
+            <blockquote 
+              class="instagram-media" 
+              data-instgrm-permalink="https://www.instagram.com/reel/DO07ZjJDeFF/"
+              data-instgrm-version="14">
+            </blockquote>
+          </div>
+        </div>
+
+        <!-- Reel 3 -->
+        <div class="card portrait-card">
+          <h4>Reel 3</h4>
+          <div class="instagram-embed">
+            <blockquote 
+              class="instagram-media" 
+              data-instgrm-permalink="PASTE_REEL_3_URL_HERE"
+              data-instgrm-version="14">
+            </blockquote>
+          </div>
+        </div>
+      </div>
+<!-- AI Automations Section -->
+<section id="ai-automations" style="padding:4rem 2rem;background:#0a0a0a;color:#fff;text-align:center;">
+  <h2 style="font-size:2rem;margin-bottom:2rem;">AI Automations</h2>
+
+  <div class="ai-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:2rem;justify-items:center;">
+    <div class="ai-card">
+      <img src="Lead.png" alt="Lead Generator" onclick="openImage(this.src)" />
+      <p>Automatic Lead generator using Google.</p>
+    </div>
+    <div class="ai-card">
+      <img src="Email.png" alt="Email Responder" onclick="openImage(this.src)" />
+      <p>Automatic Email responder.</p>
+    </div>
+    <div class="ai-card">
+      <img src="Scrap.png" alt="Web Scrapper" onclick="openImage(this.src)" />
+      <p>Web info scrapper regarding products, services and niches.</p>
+    </div>
+    <div class="ai-card">
+      <img src="Manager.png" alt="Inventory Manager" onclick="openImage(this.src)" />
+      <p>Inventory management system, checks database and responds according to data.</p>
+    </div>
+  </div>
+
+  <!-- Fullscreen Image Viewer -->
+  <div id="imgModal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.9);justify-content:center;align-items:center;">
+    <span onclick="closeImage()" style="position:absolute;top:20px;right:40px;font-size:2rem;color:#fff;cursor:pointer;">&times;</span>
+    <img id="modalImg" src="" style="max-width:90%;max-height:90%;border-radius:12px;">
+  </div>
+
+  <script>
+    // Popup image on click
+    function openImage(src) {
+      document.getElementById('imgModal').style.display = 'flex';
+      document.getElementById('modalImg').src = src;
+    }
+    function closeImage() {
+      document.getElementById('imgModal').style.display = 'none';
+    }
+  </script>
+
+  <style>
+    .ai-card {
+      background: #111;
+      border-radius: 12px;
+      padding: 1rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      width: 90%;
+      max-width: 500px;
+    }
+
+    .ai-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(155, 93, 229, 0.3);
+      cursor: pointer;
+    }
+
+    .ai-card img {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 0.75rem;
+    }
+
+    .ai-card p {
+      font-size: 1rem;
+      color: #ccc;
+    }
+
+    @media (max-width: 768px) {
+      .ai-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</section>
+
+
+ <script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Floating icons animation
+  (function initFloatingIcons(){
+    const container = document.getElementById('floating-icons');
+    if (!container) return;
+    const els = Array.from(container.querySelectorAll('.floating-icon'));
+    
+    const icons = els.map(el => {
+      const size = parseInt(getComputedStyle(el).getPropertyValue('--size')) || 40;
+      const x = Math.random() * (window.innerWidth - size);
+      const y = Math.random() * (window.innerHeight - size);
+      const vx = (Math.random() * 80 - 40);
+      const vy = (Math.random() * 60 - 30);
+      return { el, x, y, vx, vy, size };
+    });
+
+    let last = performance.now();
+    function animate(now) {
+      const dt = Math.min(60, now - last) / 1000;
+      last = now;
+
+      icons.forEach(icon => {
+        icon.vx += (Math.random() - 0.5) * 20 * dt;
+        icon.vy += (Math.random() - 0.5) * 16 * dt;
+        
+        icon.vx = Math.max(Math.min(icon.vx, 120), -120);
+        icon.vy = Math.max(Math.min(icon.vy, 90), -90);
+
+        icon.x += icon.vx * dt;
+        icon.y += icon.vy * dt;
+
+        const pad = 8;
+        if (icon.x < pad) { icon.x = pad; icon.vx = Math.abs(icon.vx) * 0.8; }
+        if (icon.y < pad) { icon.y = pad; icon.vy = Math.abs(icon.vy) * 0.8; }
+        if (icon.x > window.innerWidth - icon.size - pad) { 
+          icon.x = window.innerWidth - icon.size - pad; 
+          icon.vx = -Math.abs(icon.vx) * 0.8; 
+        }
+        if (icon.y > window.innerHeight - icon.size - pad) { 
+          icon.y = window.innerHeight - icon.size - pad;
+          icon.vy = -Math.abs(icon.vy) * 0.8;
+        }
+
+        const rot = Math.sin(now / 1000) * 6;
+        icon.el.style.transform = `translate3d(${Math.round(icon.x)}px, ${Math.round(icon.y)}px, 0) rotate(${rot}deg)`;
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+
+    window.addEventListener('resize', () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      icons.forEach(ic => {
+        ic.x = Math.min(ic.x, Math.max(0, vw - ic.size - 8));
+        ic.y = Math.min(ic.y, Math.max(0, vh - ic.size - 8));
+      });
+    });
+  })();
+});
+</script>
+
+<!-- Remove duplicate/old Instagram script blocks and replace with this single reliable loader (place near end of file, before other scripts) -->
+<script async defer src="https://www.instagram.com/embed.js"></script>
+<script>
+  (function initInstagram(){
+    function process() {
+      try {
+        if (window.instgrm && instgrm.Embeds && typeof instgrm.Embeds.process === 'function') {
+          instgrm.Embeds.process();
+        }
+      } catch(e) { /* swallow safely */ }
+    }
+    // Run now and retry a couple times in case embed.js loads later
+    document.addEventListener('DOMContentLoaded', process);
+    setTimeout(process, 700);
+    setTimeout(process, 2000);
+    // also run after embed.js loads (safer)
+    var igScript = document.querySelector('script[src="https://www.instagram.com/embed.js"]');
+    if (igScript) igScript.addEventListener('load', process);
+  })();
+</script>
+
+<!-- Testimonials -->
+  <section id="testimonials" class="section-bg">
+    <h3>What Our Clients Say</h3>
+    <div class="grid grid-2">
+      <div class="card">
+        <p>“Nexaura Labs transformed our brand presence — the creativity and precision were unmatched.”</p>
+        <h5>— CEO, NexGenNooks</h5>
+      </div>
+      <div class="card">
+        <p>“Their automation system saved us hours every week — highly recommended.”</p>
+        <h5>— Founder, TechFlare</h5>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+<section id="faq" class="section-bg">
+  <h3>Frequently Asked Questions</h3>
+  <div id="faq-container">
+    <div class="faq-item">
+      <div class="faq-question">How long does a typical project take?<button class="toggle-btn">Reveal Answer</button></div>
+      <div class="faq-answer">Depends on the scope of the project and your business type.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">Do you provide ongoing support?<button class="toggle-btn">Reveal Answer</button></div>
+      <div class="faq-answer">Yes, we offer continuous support and maintenance for all our clients.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">Can you automate my business workflows?<button class="toggle-btn">Reveal Answer</button></div>
+      <div class="faq-answer">Absolutely! We specialize in building tailored automation systems that enhance productivity.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">Do you offer custom website designs?<button class="toggle-btn">Reveal Answer</button></div>
+      <div class="faq-answer">Yes, all our websites are custom-built to match your brand identity and goals.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">What is your pricing model?<button class="toggle-btn">Reveal Answer</button></div>
+      <div class="faq-answer">Our pricing depends on project complexity and required features. Contact us for a personalized quote.</div>
+    </div>
+  </div>
+</section>
+  <!-- Contact -->
+  <section id="contact" class="section-bg">
+    <h3>Connect With Us</h3>
+
+   <!-- Contact Form -->
+<form 
+  id="contact-form"
+  action="https://formspree.io/f/myzbppqz" 
+  method="POST"
+  style="max-width:500px;margin:2rem auto;display:flex;flex-direction:column;gap:1rem;"
+>
+  <input 
+    type="text" 
+    name="name" 
+    placeholder="Your Name" 
+    required 
+    style="padding:0.75rem;border-radius:0.5rem;border:none;outline:none;"
+  >
+  
+  <input 
+    type="email" 
+    name="email" 
+    placeholder="Your Email" 
+    required 
+    style="padding:0.75rem;border-radius:0.5rem;border:none;outline:none;"
+  >
+
+  <input 
+    type="text" 
+    name="business_name" 
+    placeholder="Business Name" 
+    required 
+    style="padding:0.75rem;border-radius:0.5rem;border:none;outline:none;"
+  >
+
+  <input 
+    type="text" 
+    name="industry" 
+    placeholder="Industry your business belongs to" 
+    required 
+    style="padding:0.75rem;border-radius:0.5rem;border:none;outline:none;"
+  >
+
+  <textarea 
+    name="details" 
+    placeholder="Other details" 
+    required 
+    style="padding:0.75rem;border-radius:0.5rem;border:none;outline:none;resize:vertical;min-height:120px;"
+  ></textarea>
+  
+  <button 
+    type="submit" 
+    style="padding:0.75rem;background:#9b5de5;color:white;font-weight:600;border:none;border-radius:0.5rem;cursor:pointer;transition:background 0.3s;"
+  >
+    Send Message
+  </button>
+  
+  <p id="form-status" style="color:#ccc;margin-top:0.5rem;"></p>
+</form>
+
+<script>
+const form = document.getElementById('contact-form');
+const status = document.getElementById('form-status');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = new FormData(form);
+  const response = await fetch(form.action, {
+    method: form.method,
+    body: data,
+    headers: { 'Accept': 'application/json' }
+  });
+  if (response.ok) {
+    status.textContent = "Thanks for your message!";
+    form.reset();
+  } else {
+    status.textContent = "There was a problem submitting your form.";
+  }
+});
+</script>
+
+
+<!-- Footer Section -->
+<footer style="margin-top:3rem;padding:2rem 0;text-align:center;color:#ccc;font-size:0.9rem;">
+  <div class="contact-icons" style="display:flex;flex-wrap:wrap;justify-content:center;gap:1.2rem;margin-bottom:1rem;">
+    <a href="https://www.instagram.com/nexauralab" target="_blank">
+      <i class="fab fa-instagram"></i> Instagram
+    </a>
+    <a href="https://x.com/NexauraLab" target="_blank">
+      <i class="fab fa-x-twitter"></i> X/Twitter
+    </a>
+    <a href="https://www.facebook.com/nexauralabs" target="_blank">
+      <i class="fab fa-facebook"></i> Facebook
+    </a>
+    <a href="https://www.linkedin.com/company/nexauralabs" target="_blank">
+      <i class="fab fa-linkedin"></i> LinkedIn
+    </a>
+    <a href="https://wa.me/03110392340" target="_blank">
+      <i class="fab fa-whatsapp"></i> WhatsApp
+    </a>
+  </div>
+
+  <div class="contact-icons" style="display:flex;flex-wrap:wrap;justify-content:center;gap:1.2rem;margin-bottom:1rem;">
+    <a href="https://www.threads.net/@nexauralab" target="_blank">
+      <i class="fa-solid fa-at"></i> Threads
+    </a>
+    <a href="https://www.youtube.com/@nexauralabs" target="_blank">
+      <i class="fab fa-youtube"></i> YouTube
+    </a>
+    <a href="mailto:shaffaneditz22@gmail.com">
+      <i class="fa-solid fa-envelope"></i> Email
+    </a>
+    <a href="tel:+923110392340">
+      <i class="fa-solid fa-phone"></i> Phone
+    </a>
+  </div>  
+
+  <!-- Footer -->
+  <footer>
+    © 2025 Nexaura Labs — Crafted with passion and precision.
+  </footer>
+  <script async src="//www.instagram.com/embed.js"></script>
+<script>
+  function loadInstagramEmbeds() {
+    if (window.instgrm) {
+      instgrm.Embeds.process();
+    } else {
+      setTimeout(loadInstagramEmbeds, 500);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadInstagramEmbeds);
+</script>
+<script>
+(function() {
+  // Elements
+  const canvas = document.getElementById('bg-stars') || (() => { const c=document.createElement('canvas'); c.id='bg-stars'; document.body.prepend(c); return c; })();
+  const ctx = canvas.getContext('2d');
+
+  // Mouse glow
+  const mouseGlow = document.getElementById('mouse-glow') || (() => { const d=document.createElement('div'); d.id='mouse-glow'; document.body.appendChild(d); return d; })();
+
+  // Respect reduced motion
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Canvas size
+  let W = 0, H = 0, dpr = Math.max(1, window.devicePixelRatio || 1);
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Particles
+  const count = Math.max(40, Math.round((W*H) / 90000)); // scales with viewport
+  const particles = new Array(count).fill(0).map(() => {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 2.3 + 0.6,
+      vx: (Math.random() - 0.5) * 24,
+      vy: (Math.random() - 0.5) * 18,
+      alpha: 0.08 + Math.random() * 0.6,
+      hue: 260 + Math.random() * 40
+    };
+  });
+
+  // Animation
+  let last = performance.now();
+  function step(now) {
+    const dt = Math.min(60, now - last) / 1000;
+    last = now;
+
+    // Clear
+    ctx.clearRect(0,0,W,H);
+
+    // Draw particles
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+
+      // wrap
+      if (p.x < -20) p.x = W + 20;
+      if (p.x > W + 20) p.x = -20;
+      if (p.y < -20) p.y = H + 20;
+      if (p.y > H + 20) p.y = -20;
+
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4);
+      grad.addColorStop(0, `hsla(${p.hue},70%,85%,${p.alpha})`);
+      grad.addColorStop(0.6, `hsla(${p.hue},60%,50%,${p.alpha * 0.36})`);
+      grad.addColorStop(1, `hsla(${p.hue},60%,30%,0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(0.5, p.r), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (!reduced) requestAnimationFrame(step);
+  }
+
+  // Start loop
+  if (!reduced) {
+    requestAnimationFrame((t) => { last = t; requestAnimationFrame(step); });
+  } else {
+    // Single static draw for reduced-motion preference
+    ctx.clearRect(0,0,W,H);
+    for (let i=0;i<120;i++){
+      ctx.fillStyle = 'rgba(255,255,255,0.02)';
+      ctx.beginPath();
+      ctx.arc(Math.random()*W, Math.random()*H, Math.random()*1.6+0.3, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  // Recreate particles on load/resize (keeps count accurate)
+  function regen() {
+    resize();
+    const newCount = Math.max(40, Math.round((W*H) / 90000));
+    particles.length = 0;
+    for (let i=0;i<newCount;i++){
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 2.3 + 0.6,
+        vx: (Math.random() - 0.5) * 24,
+        vy: (Math.random() - 0.5) * 18,
+        alpha: 0.08 + Math.random() * 0.6,
+        hue: 260 + Math.random() * 40
+      });
+    }
+  }
+  window.addEventListener('load', regen);
+  window.addEventListener('resize', () => { setTimeout(regen, 120); });
+
+  // Optimized mouse glow (single RAF)
+  let mx = -9999, my = -9999;
+  let glowX = mx, glowY = my;
+  let raf;
+  function onMove(e) {
+    mx = e.touches ? e.touches[0].clientX : e.clientX;
+    my = e.touches ? e.touches[0].clientY : e.clientY;
+    mouseGlow.style.opacity = '0.98';
+    if (!raf) raf = requestAnimationFrame(updateGlow);
+  }
+  function onLeave() {
+    mouseGlow.style.opacity = '0';
+    mx = my = -9999;
+  }
+  function updateGlow() {
+    glowX += (mx - glowX) * 0.25;
+    glowY += (my - glowY) * 0.25;
+    if (mx === -9999 && my === -9999) {
+      mouseGlow.style.transform = `translate3d(-9999px,-9999px,0)`;
+      raf = null;
+      return;
+    }
+    mouseGlow.style.transform = `translate3d(${Math.round(glowX)}px, ${Math.round(glowY)}px, 0)`;
+    raf = requestAnimationFrame(updateGlow);
+  }
+  document.addEventListener('mousemove', onMove, { passive:true });
+  document.addEventListener('touchmove', onMove, { passive:true });
+  document.addEventListener('mouseleave', onLeave);
+  document.addEventListener('touchend', onLeave);
+
+})();
+</script>
+<script>
+// Injected script: click-to-load + fallback to new tab if iframe load blocked
+document.addEventListener('click', function (e) {
+  const ph = e.target.closest('.video-placeholder');
+  if (!ph) return;
+  const src = ph.dataset.src;
+  // if already replaced, ignore
+  if (ph.dataset.loaded === '1') return;
+
+  // create iframe
+  const iframe = document.createElement('iframe');
+  iframe.loading = 'lazy';
+  iframe.src = src + '&autoplay=1';
+  iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+  iframe.allowFullscreen = true;
+
+  // replace contents
+  ph.innerHTML = '';
+  ph.appendChild(iframe);
+  ph.dataset.loaded = '1';
+
+  // fallback: if iframe doesn't fire load in 2000ms, open in new tab
+  let loaded = false;
+  iframe.addEventListener('load', () => { loaded = true; });
+  setTimeout(() => {
+    if (!loaded) {
+      // open in new tab (user likely blocked embedding)
+      window.open(src, '_blank', 'noopener');
+      // optionally restore placeholder (or leave new tab opened)
+    }
+  }, 2000);
+});
+
+// Also support keyboard activation
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const focused = document.activeElement;
+    if (focused && focused.classList.contains('video-placeholder')) focused.click();
+  }
+});
+</script>
+<script>
+(function(){
+  // Replace placeholder with iframe on click or keyboard activation.
+  function createIframe(videoId) {
+    // embed url with modestbranding and playsinline params
+    return "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(videoId) + "?rel=0&modestbranding=1&playsinline=1";
+  }
+
+  document.addEventListener('click', function(e){
+    const ph = e.target.closest('.video-placeholder');
+    if (!ph) return;
+    loadVideo(ph);
+  }, {passive:true});
+
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const ph = document.activeElement;
+    if (!ph || !ph.classList.contains('video-placeholder')) return;
+    e.preventDefault();
+    loadVideo(ph);
+  });
+
+  function loadVideo(ph) {
+    if (ph.dataset.loaded === '1') return;
+    const id = ph.dataset.videoId;
+    const src = createIframe(id);
+
+    const iframe = document.createElement('iframe');
+    iframe.loading = 'lazy';
+    iframe.src = src + '&autoplay=1';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    iframe.allowFullscreen = true;
+
+    // Replace placeholder with iframe and detect load failure.
+    const container = ph.parentElement;
+    ph.replaceWith(iframe);
+    ph.dataset.loaded = '1';
+
+    // If iframe fails to load in 2s, open in new tab (handles blocked embeds / error 153)
+    let loaded = false;
+    iframe.addEventListener('load', () => { loaded = true; });
+    setTimeout(() => {
+      if (!loaded) {
+        // open YouTube watch page as fallback
+        window.open('https://youtu.be/' + encodeURIComponent(id), '_blank', 'noopener');
+        // remove the stalled iframe and restore placeholder (optional)
+        if (iframe.parentElement) {
+          iframe.remove();
+          // recreate placeholder visually
+          const restored = ph.cloneNode(true);
+          restored.dataset.loaded = '0';
+          container.appendChild(restored);
+        }
+      }
+    }, 2000);
+  }
+})();
+</script>
+<script>
+(function(){
+  const glow = document.getElementById('mouse-glow');
+  if (!glow) return;
+
+  // show instantly on first movement
+  document.addEventListener('mousemove', e => {
+    glow.style.opacity = '1';
+    glow.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+  });
+
+  // continuous tracking (no lag)
+  document.addEventListener('pointermove', e => {
+    glow.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+  });
+
+  // fade out when leaving viewport
+  document.addEventListener('mouseleave', () => {
+    glow.style.opacity = '0';
+  });
+})();
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const faqs = document.querySelectorAll(".faq-item");
+
+    faqs.forEach(faq => {
+      const btn = faq.querySelector(".toggle-btn");
+      const answer = faq.querySelector(".faq-answer");
+      answer.style.display = "none";
+
+      btn.addEventListener("click", () => {
+        const isVisible = answer.style.display === "block";
+        answer.style.display = isVisible ? "none" : "block";
+        btn.textContent = isVisible ? "Reveal Answer" : "Retract Answer";
+      });
+    });
+  });
+</script>
+</body>
+</html>
