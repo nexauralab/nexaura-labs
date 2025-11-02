@@ -594,20 +594,25 @@
   </section>
   
   <!-- Portfolio -->
-  <section id="portfolio" style="padding:2rem; max-width:1300px; margin:auto;">
+  <section id="portfolio" style="padding:2rem; max-width:1200px; margin:auto;">
     <h3 style="color:#fff; text-align:center; margin-bottom:2rem;">Portfolio</h3>
 
     <div class="portfolio-grid">
       <div class="card landscape-card showreel-card">
   <h4>Brand Showreel</h4>
-
-  <!-- Click-to-load placeholder to avoid embedding errors -->
-  <div class="card">
-  <video style="width:100%; height:auto; border-radius:12px;" controls>
-    <source src="Final video.mp4" type="video/mp4">
-    Your browser does not support the video tag.
+  <div class="card" style="overflow:hidden; border-radius:12px;">
+  <video 
+    src="Final video.mp4" 
+    autoplay 
+    muted 
+    loop 
+    playsinline 
+    controls
+    style="width:100%; height:auto; display:block; object-fit:cover; border-radius:12px;">
   </video>
 </div>
+
+  </div>
             <!-- 2) Reels — three portrait short-form cards side-by-side -->
       <div class="reels-grid">
         <!-- Reel 1 -->
@@ -652,19 +657,19 @@
 
   <div class="ai-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:2rem;justify-items:center;">
     <div class="ai-card">
-      <img src="Lead.png" alt="Lead Generator" onclick="openImage(this.src)" />
+      <img src="Images/Lead.png" alt="Lead Generator" onclick="openImage(this.src)" />
       <p>Automatic Lead generator using Google.</p>
     </div>
     <div class="ai-card">
-      <img src="Email.png" alt="Email Responder" onclick="openImage(this.src)" />
+      <img src="Images/Email.png" alt="Email Responder" onclick="openImage(this.src)" />
       <p>Automatic Email responder.</p>
     </div>
     <div class="ai-card">
-      <img src="Scrap.png" alt="Web Scrapper" onclick="openImage(this.src)" />
+      <img src="Images/Scrap.png" alt="Web Scrapper" onclick="openImage(this.src)" />
       <p>Web info scrapper regarding products, services and niches.</p>
     </div>
     <div class="ai-card">
-      <img src="Manager.png" alt="Inventory Manager" onclick="openImage(this.src)" />
+      <img src="Images/Manager.png" alt="Inventory Manager" onclick="openImage(this.src)" />
       <p>Inventory management system, checks database and responds according to data.</p>
     </div>
   </div>
@@ -965,7 +970,7 @@ form.addEventListener('submit', async (e) => {
       <i class="fa-solid fa-phone"></i> Phone:
       <p>+923296528457<p>
     </a>
-  </div>  
+  </div> 
 
   <!-- Footer -->
   <footer>
@@ -1091,36 +1096,6 @@ form.addEventListener('submit', async (e) => {
   }
   window.addEventListener('load', regen);
   window.addEventListener('resize', () => { setTimeout(regen, 120); });
-
-  // Optimized mouse glow (single RAF)
-  let mx = -9999, my = -9999;
-  let glowX = mx, glowY = my;
-  let raf;
-  function onMove(e) {
-    mx = e.touches ? e.touches[0].clientX : e.clientX;
-    my = e.touches ? e.touches[0].clientY : e.clientY;
-    mouseGlow.style.opacity = '0.98';
-    if (!raf) raf = requestAnimationFrame(updateGlow);
-  }
-  function onLeave() {
-    mouseGlow.style.opacity = '0';
-    mx = my = -9999;
-  }
-  function updateGlow() {
-    glowX += (mx - glowX) * 0.25;
-    glowY += (my - glowY) * 0.25;
-    if (mx === -9999 && my === -9999) {
-      mouseGlow.style.transform = `translate3d(-9999px,-9999px,0)`;
-      raf = null;
-      return;
-    }
-    mouseGlow.style.transform = `translate3d(${Math.round(glowX)}px, ${Math.round(glowY)}px, 0)`;
-    raf = requestAnimationFrame(updateGlow);
-  }
-  document.addEventListener('mousemove', onMove, { passive:true });
-  document.addEventListener('touchmove', onMove, { passive:true });
-  document.addEventListener('mouseleave', onLeave);
-  document.addEventListener('touchend', onLeave);
 
 })();
 </script>
@@ -1264,13 +1239,3 @@ document.addEventListener('keydown', function (e) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
